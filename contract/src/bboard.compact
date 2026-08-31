@@ -1,0 +1,66 @@
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger credentialCommitment: Bytes<32>;
+
+export ledger issuer: Bytes<32>;
+
+export ledger active: Boolean;
+
+export ledger credentialVersion: Counter;
+
+constructor() {
+  credentialCommitment = pad(32, "");
+  issuer = pad(32, "");
+  active = false;
+  credentialVersion.increment(1);
+}
+
+witness localSecretKey(): Bytes<32>;
+
+witness studentCgpa(): Uint<16>;
+
+witness studentAttendance(): Uint<16>;
+
+export circuit issueCredential(): [] {
+  assert(!active, "Credential is already active");
+
+  const cgpa = studentCgpa();
+  const attendance = studentAttendance();
+
+  assert(cgpa >= 800, "CGPA requirement not satisfied");
+  assert(attendance >= 75, "Attendance requirement not satisfied");
+
+  active = true;
+}
+
+export circuit proveEligibility(): Boolean {
+  assert(active, "Credential is not active");
+
+  const cgpa = studentCgpa();
+  const attendance = studentAttendance();
+
+  assert(cgpa >= 800, "CGPA requirement not satisfied");
+  assert(attendance >= 75, "Attendance requirement not satisfied");
+
+  return true;
+}
+
+export circuit revokeCredential(): [] {
+  assert(active, "Credential is not active");
+
+  active = false;
+  credentialVersion.increment(1);
+}
+
+export circuit publicKey(
+  sk: Bytes<32>,
+  sequence: Bytes<32>
+): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([
+    pad(32, "student-pass:pk:"),
+    sequence,
+    sk
+  ]);
+}
