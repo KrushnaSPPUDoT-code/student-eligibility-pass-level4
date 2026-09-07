@@ -2,7 +2,7 @@ name: Deploy Student Eligibility Pass
 
 on:
   push:
-    branches: [level3-frontend-integration]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
