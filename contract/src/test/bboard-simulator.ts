@@ -18,7 +18,12 @@ export class BBoardSimulator {
   readonly contract: Contract<BBoardPrivateState>;
   circuitContext: CircuitContext<BBoardPrivateState>;
 
-  constructor(secretKey: Uint8Array, cgpa = 850n, attendance = 85n) {
+  constructor(
+    secretKey: Uint8Array,
+    income = 800000n,
+    creditScore = 750n,
+    debt = 200000n,
+  ) {
     this.contract = new Contract<BBoardPrivateState>(witnesses);
 
     const {
@@ -29,8 +34,9 @@ export class BBoardSimulator {
       createConstructorContext(
         {
           secretKey,
-          cgpa,
-          attendance,
+          income,
+          creditScore,
+          debt,
         },
         "0".repeat(64),
       ),
