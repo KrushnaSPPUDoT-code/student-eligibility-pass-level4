@@ -114,7 +114,12 @@ export interface DeployedBoardAPIProvider {
    * For a given `contractAddress`, the method will attempt to find and join the identified bulletin board
    * contract; otherwise it will attempt to deploy a new one.
    */
-  readonly resolve: (contractAddress?: ContractAddress) => Observable<BoardDeployment>;
+  readonly resolve: (
+     contractAddress?: ContractAddress,
+     income?: bigint,
+     creditScore?: bigint,
+     debt?: bigint,
+   ) => Observable<BoardDeployment>;
 }
 
 /**
@@ -142,7 +147,12 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
   readonly boardDeployments$: Observable<Array<Observable<BoardDeployment>>>;
 
   /** @inheritdoc */
-  resolve(contractAddress?: ContractAddress): Observable<BoardDeployment> {
+  resolve(
+     contractAddress?: ContractAddress,
+     income = 800000n,
+     creditScore = 750n,
+     debt = 200000n,
+  ): Observable<BoardDeployment> {
     const deployments = this.#boardDeploymentsSubject.value;
     let deployment = deployments.find(
       (deployment) =>
@@ -160,7 +170,7 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     if (contractAddress) {
       void this.joinDeployment(deployment, contractAddress);
     } else {
-      void this.deployDeployment(deployment);
+      void this.deployDeployment(deployment, income, creditScore, debt);
     }
 
     this.#boardDeploymentsSubject.next([...deployments, deployment]);
@@ -178,10 +188,21 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
     return this.#initializedProviders ?? (this.#initializedProviders = initializeProviders(this.logger));
   }
 
-  private async deployDeployment(deployment: BehaviorSubject<BoardDeployment>): Promise<void> {
+  private async deployDeployment(
+     deployment: BehaviorSubject<BoardDeployment>,
+     income: bigint,
+     creditScore: bigint,
+     debt: bigint,
+  ): Promise<void> {
     try {
       const providers = await this.getProviders();
-      const api = await BBoardAPI.deploy(providers, this.logger);
+      const api = await BBoardAPI.deploy(
+         providers,
+         income,
+         creditScore,
+         debt,
+         this.logger,
+  );
 
       deployment.next({
         status: 'deployed',

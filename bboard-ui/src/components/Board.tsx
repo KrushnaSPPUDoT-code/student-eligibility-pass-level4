@@ -47,11 +47,8 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
   const [eligibilityResult, setEligibilityResult] = useState<boolean>();
 
-  const PREDEPLOYED_CONTRACT_ADDRESS =
-    '0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b' as ContractAddress;
-
-  const onCreateBoard = useCallback(() => boardApiProvider.resolve(PREDEPLOYED_CONTRACT_ADDRESS), [boardApiProvider]);
-
+  const onCreateBoard = useCallback(() => boardApiProvider.resolve(), [boardApiProvider]); 
+ 
   const onIssueCredential = useCallback(async () => {
     if (!deployedBoardAPI) return;
 
@@ -182,7 +179,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
           <Box sx={{ mt: 3 }}>
             <Button variant="contained" onClick={onCreateBoard} fullWidth>
-              Create Risk Passport
+              Deploy Risk Passport
             </Button>
 
             <Box sx={{ mt: 2 }}>

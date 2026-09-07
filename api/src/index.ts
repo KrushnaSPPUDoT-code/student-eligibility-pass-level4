@@ -109,13 +109,24 @@ export class BBoardAPI implements DeployedBBoardAPI {
     });
   }
 
-  static async deploy(providers: BBoardProviders, logger?: Logger): Promise<BBoardAPI> {
+  static async deploy(
+    providers: BBoardProviders,
+    income: bigint,
+    creditScore: bigint,
+    debt: bigint,
+    logger?: Logger,
+  ): Promise<BBoardAPI> {
     logger?.info('deployContract');
 
     const deployedBBoardContract = await deployContract(providers, {
       compiledContract: CompiledBBoardContractContract,
       privateStateId: bboardPrivateStateKey,
-      initialPrivateState: createBBoardPrivateState(utils.randomBytes(32), 800000n, 750n, 200000n),
+      initialPrivateState: createBBoardPrivateState(
+          utils.randomBytes(32),
+          income,
+          creditScore,
+          debt,
+  ),
     });
 
     logger?.trace({

@@ -154,7 +154,7 @@ The exact CGPA and attendance values remain private.
                        ▼
                 Midnight Preprod
 📁 Project Structure
-student-eligibility-pass-level3/
+student-eligibility-pass-level4/
 │
 ├── contract/
 │   └── src/
@@ -193,8 +193,8 @@ The application is designed to work with the Midnight Preprod network.
 
 Clone the repository:
 
-git clone https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level3.git
-cd student-eligibility-pass-level3
+git clone https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level4.git
+cd student-eligibility-pass-level4
 
 Install dependencies:
 
@@ -273,7 +273,7 @@ The CI pipeline checks the project's TypeScript, linting, build, and testing req
 
 Repository:
 
-https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level3
+https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level4
 
 🎥 Demo
 
