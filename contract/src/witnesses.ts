@@ -3,32 +3,42 @@ import { WitnessContext } from "@midnight-ntwrk/midnight-js-protocol/compact-run
 
 export type BBoardPrivateState = {
   readonly secretKey: Uint8Array;
-  readonly cgpa: bigint;
-  readonly attendance: bigint;
+  readonly income: bigint;
+  readonly creditScore: bigint;
+  readonly debt: bigint;
 };
 
 export const createBBoardPrivateState = (
   secretKey: Uint8Array,
-  cgpa: bigint,
-  attendance: bigint,
+  income: bigint,
+  creditScore: bigint,
+  debt: bigint,
 ): BBoardPrivateState => ({
   secretKey,
-  cgpa,
-  attendance,
+  income,
+  creditScore,
+  debt,
 });
 
 export const witnesses = {
-  studentCgpa: ({
+  userIncome: ({
     privateState,
   }: WitnessContext<Ledger, BBoardPrivateState>): [
     BBoardPrivateState,
     bigint,
-  ] => [privateState, privateState.cgpa],
+  ] => [privateState, privateState.income],
 
-  studentAttendance: ({
+  userCreditScore: ({
     privateState,
   }: WitnessContext<Ledger, BBoardPrivateState>): [
     BBoardPrivateState,
     bigint,
-  ] => [privateState, privateState.attendance],
+  ] => [privateState, privateState.creditScore],
+
+  userDebt: ({
+    privateState,
+  }: WitnessContext<Ledger, BBoardPrivateState>): [
+    BBoardPrivateState,
+    bigint,
+  ] => [privateState, privateState.debt],
 };

@@ -19,18 +19,27 @@ constructor() {
 
 witness localSecretKey(): Bytes<32>;
 
-witness studentCgpa(): Uint<16>;
+witness userIncome(): Uint<64>;
 
-witness studentAttendance(): Uint<16>;
+witness userCreditScore(): Uint<16>;
+
+witness userDebt(): Uint<64>;
 
 export circuit issueCredential(): [] {
   assert(!active, "Credential is already active");
 
-  const cgpa = studentCgpa();
-  const attendance = studentAttendance();
+  const income = userIncome();
+  const creditScore = userCreditScore();
+  const debt = userDebt();
 
-  assert(cgpa >= 800, "CGPA requirement not satisfied");
-  assert(attendance >= 75, "Attendance requirement not satisfied");
+  assert(income >= 600000, "Income requirement not satisfied");
+
+  assert(creditScore >= 700, "Credit score requirement not satisfied");
+
+  assert(
+    debt * 100 <= income * 40,
+    "Debt-to-income ratio requirement not satisfied"
+  );
 
   active = true;
 }
@@ -38,11 +47,18 @@ export circuit issueCredential(): [] {
 export circuit proveEligibility(): Boolean {
   assert(active, "Credential is not active");
 
-  const cgpa = studentCgpa();
-  const attendance = studentAttendance();
+  const income = userIncome();
+  const creditScore = userCreditScore();
+  const debt = userDebt();
 
-  assert(cgpa >= 800, "CGPA requirement not satisfied");
-  assert(attendance >= 75, "Attendance requirement not satisfied");
+  assert(income >= 600000, "Income requirement not satisfied");
+
+  assert(creditScore >= 700, "Credit score requirement not satisfied");
+
+  assert(
+    debt * 100 <= income * 40,
+    "Debt-to-income ratio requirement not satisfied"
+  );
 
   return true;
 }
@@ -59,7 +75,7 @@ export circuit publicKey(
   sequence: Bytes<32>
 ): Bytes<32> {
   return persistentHash<Vector<3, Bytes<32>>>([
-    pad(32, "student-pass:pk:"),
+    pad(32, "credit-pass:pk:"),
     sequence,
     sk
   ]);
