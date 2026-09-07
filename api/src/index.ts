@@ -115,7 +115,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
     const deployedBBoardContract = await deployContract(providers, {
       compiledContract: CompiledBBoardContractContract,
       privateStateId: bboardPrivateStateKey,
-      initialPrivateState: createBBoardPrivateState(utils.randomBytes(32), 850n, 85n),
+      initialPrivateState: createBBoardPrivateState(utils.randomBytes(32), 800000n, 750n, 200000n),
     });
 
     logger?.trace({
@@ -156,7 +156,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
 
     const existingPrivateState = await providers.privateStateProvider.get(bboardPrivateStateKey);
 
-    return existingPrivateState ?? createBBoardPrivateState(utils.randomBytes(32), 850n, 85n);
+    return existingPrivateState ?? createBBoardPrivateState(utils.randomBytes(32), 800000n, 750n, 200000n);
   }
 }
 
