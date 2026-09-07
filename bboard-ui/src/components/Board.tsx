@@ -63,7 +63,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
       await deployedBoardAPI.issueCredential();
 
-      setSuccessMessage('Eligibility credential issued successfully.');
+      setSuccessMessage('Risk credential issued successfully.');
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -84,7 +84,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
       setEligibilityResult(result);
 
       if (result) {
-        setSuccessMessage('Eligibility proven successfully without revealing CGPA or attendance.');
+        setSuccessMessage('Risk eligibility proven successfully without revealing your financial values.');
       }
     } catch (error: unknown) {
       setEligibilityResult(false);
@@ -175,14 +175,14 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
       {!boardDeployment$ && (
         <CardContent>
           <Typography variant="h5" gutterBottom>
-            Student Eligibility Pass
+            Private Credit & Risk Passport
           </Typography>
 
-          <Typography color="text.secondary">Create or join a private eligibility credential.</Typography>
+          <Typography color="text.secondary">Create or join a private financial risk credential.</Typography>
 
           <Box sx={{ mt: 3 }}>
             <Button variant="contained" onClick={onCreateBoard} fullWidth>
-              Create Eligibility Pass
+              Create Risk Passport
             </Button>
 
             <Box sx={{ mt: 2 }}>
@@ -219,7 +219,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                 <Skeleton variant="circular" width={30} height={30} />
               )
             }
-            title="Student Eligibility Pass"
+            title="Private Credit & Risk Passport"
             subheader={
               deployedBoardAPI
                 ? toShortFormatContractAddress(deployedBoardAPI.deployedContractAddress)
@@ -240,7 +240,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Prove that you satisfy the required academic conditions without revealing your actual CGPA or attendance.
+              Prove that you satisfy lending and risk requirements without revealing your income, credit score, or debt.
             </Typography>
 
             {boardState ? (
@@ -264,13 +264,13 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
                 {eligibilityResult === true && (
                   <Alert severity="success" sx={{ mb: 2 }}>
-                    Eligibility verified ✓
+                    Risk eligibility verified ✓
                   </Alert>
                 )}
 
                 {eligibilityResult === false && (
                   <Alert severity="error" sx={{ mb: 2 }}>
-                    Eligibility verification failed.
+                    Risk eligibility verification failed.
                   </Alert>
                 )}
 
@@ -308,7 +308,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                   disabled={isActive}
                   onClick={onIssueCredential}
                 >
-                  Issue Eligibility Credential
+                  Issue Risk Credential
                 </Button>
 
                 <Button
@@ -318,7 +318,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                   disabled={!isActive}
                   onClick={onProveEligibility}
                 >
-                  Prove Eligibility
+                  Prove Risk Eligibility
                 </Button>
 
                 <Button
