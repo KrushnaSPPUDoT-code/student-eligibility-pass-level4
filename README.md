@@ -261,3 +261,40 @@ Three workflows under `.github/workflows/`:
 ## License
 
 Based on Midnight's example dApp architecture. Educational/demonstration project.
+## 🚀 Live Preprod Deployment
+
+### Live MVP
+
+**GitHub Pages Demo:**  
+https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+
+**Network:** Midnight Preprod
+
+**Deployed Contract Address:**
+```text
+053de1327e376844f1eb64bb9b1ce77c7b766b374ee2849dd4441946ea91d3dd
+Contract Verification
+
+The deployed MVP has successfully executed the issueCredential() circuit on Midnight Preprod.
+
+A successful Preprod transaction was confirmed through the Midnight Explorer:
+
+Transaction:
+7792a03f20fa8a122a4861301e04c970e8fa34bea2d85b2caa62c96ae8ae1274
+
+The transaction shows:
+
+issueCredential() executed successfully
+Status: SUCCESS
+Contract actions: 1
+Unique contracts: 1
+Eligibility Rules
+
+The private financial inputs are evaluated using:
+
+Annual income ≥ ₹6,00,000
+Credit score ≥ 700
+Debt-to-income ratio ≤ 40%
+
+The financial values are supplied as private witness data and are not displayed in the public application state.
+
