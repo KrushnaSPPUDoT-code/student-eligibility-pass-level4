@@ -232,23 +232,6 @@ During a proof, `userIncome`, `userCreditScore`, and `userDebt` witnesses feed
 the private values into the circuit inside the proving step; the proof only
 asserts the eligibility conditions.
 
-## Contract address
-
-**Placeholder — pending real Preprod deployment.**
-
-The UI deploys a fresh contract per session with the funded Lace wallet and shows
-the returned address. A fixed address will be added here only after a real
-deployment has produced one.
-
-## Deployed frontend
-
-**Placeholder — pending GitHub Pages deployment.**
-
-The GitHub Actions workflow `deploy-pages.yml` deploys the built `bboard-ui/dist`
-to GitHub Pages at the repo URL when main is updated. The Vite `base` is set to
-`/student-eligibility-pass-level4/` so ZK assets resolve correctly under the
-Pages sub-path.
-
 ## CI/CD
 
 Three workflows under `.github/workflows/`:
@@ -261,6 +244,8 @@ Three workflows under `.github/workflows/`:
 ## License
 
 Based on Midnight's example dApp architecture. Educational/demonstration project.
+
+
 ## 🚀 Live Preprod Deployment
 
 ### Live MVP
@@ -271,18 +256,20 @@ https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
 **Network:** Midnight Preprod
 
 **Deployed Contract Address:**
+
 ```text
 053de1327e376844f1eb64bb9b1ce77c7b766b374ee2849dd4441946ea91d3dd
-Contract Verification
+```
+
+### Contract Verification
 
 The deployed MVP has successfully executed the issueCredential() circuit on Midnight Preprod.
 
-A successful Preprod transaction was confirmed through the Midnight Explorer:
+Verified transaction:
 
-Transaction:
 7792a03f20fa8a122a4861301e04c970e8fa34bea2d85b2caa62c96ae8ae1274
 
-The transaction shows:
+The transaction was confirmed with:
 
 issueCredential() executed successfully
 Status: SUCCESS
@@ -296,5 +283,16 @@ Annual income ≥ ₹6,00,000
 Credit score ≥ 700
 Debt-to-income ratio ≤ 40%
 
-The financial values are supplied as private witness data and are not displayed in the public application state.
+The financial values are supplied as private witness data and are not stored as ordinary public ledger fields.
+
+🌐 Product Profile
+
+X: https://x.com/Trust_Pass
+
+Launch post:
+https://x.com/Trust_Pass/status/2101302859853963558
+
+🎥 Demo
+
+A short demonstration video will show the live Preprod application, wallet connection, private eligibility inputs, credential issuance, active credential state, and successful transaction verification.
 
