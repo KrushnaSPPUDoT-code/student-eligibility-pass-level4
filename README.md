@@ -1,5 +1,19 @@
 # TrustPass
 
+## 🚀 Live MVP
+
+**Live Demo:** https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+
+**Network:** Midnight Preprod
+
+**Contract Address:** `053de1327e376844f1eb64bb9b1ce77c7b766b374ee2849dd4441946ea91d3dd`
+
+**Verified Transaction:** `7792a03f20fa8a122a4861301e04c970e8fa34bea2d85b2caa62c96ae8ae1274`
+
+**Product:** TrustPass — Private Credit & Risk Passport
+
+---
+
 **Privacy-Preserving Financial Eligibility Passport on Midnight**
 
 [![CI](../../actions/workflows/ci.yaml/badge.svg)](../../actions/workflows/ci.yaml)
@@ -8,8 +22,7 @@ TrustPass is a Level 4 Midnight Network MVP that lets a user prove they satisfy
 predefined financial eligibility rules **without exposing their exact income,
 credit score, or total debt on-chain**.
 
-The project is built on Midnight's Compact smart-contract architecture with
-Midnight.js, ZK proofs, the Lace wallet, and the Midnight Preprod network.
+The project is built on Midnight's Compact smart-contract architecture, Midnight.js, ZK proofs, the 1AM wallet, and the Midnight Preprod network.
 
 ---
 
