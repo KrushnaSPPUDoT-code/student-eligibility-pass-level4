@@ -36,7 +36,7 @@ import {
 } from 'rxjs';
 import { pipe as fnPipe } from 'fp-ts/function';
 import { type Logger } from 'pino';
-import { ConnectedAPI, type InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
+import { ConnectedAPI, type ConnectionStatus, type InitialAPI } from '@midnight-ntwrk/dapp-connector-api';
 import { FetchZkConfigProvider } from '@midnight-ntwrk/midnight-js-fetch-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
@@ -55,26 +55,26 @@ import { NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import type { UnboundTransaction } from '@midnight-ntwrk/midnight-js-types';
 
 /**
- * An in-progress bulletin board deployment.
+ * An in-progress Risk Passport deployment.
  */
 export interface InProgressBoardDeployment {
   readonly status: 'in-progress';
 }
 
 /**
- * A deployed bulletin board deployment.
+ * A deployed Risk Passport deployment.
  */
 export interface DeployedBoardDeployment {
   readonly status: 'deployed';
 
   /**
-   * The {@link DeployedBBoardAPI} instance when connected to an on network bulletin board contract.
+   * The {@link DeployedBBoardAPI} instance when connected to an on network Risk Passport contract.
    */
   readonly api: DeployedBBoardAPI;
 }
 
 /**
- * A failed bulletin board deployment.
+ * A failed Risk Passport deployment.
  */
 export interface FailedBoardDeployment {
   readonly status: 'failed';
@@ -86,12 +86,12 @@ export interface FailedBoardDeployment {
 }
 
 /**
- * A bulletin board deployment.
+ * A Risk Passport deployment.
  */
 export type BoardDeployment = InProgressBoardDeployment | DeployedBoardDeployment | FailedBoardDeployment;
 
 /**
- * Provides access to bulletin board deployments.
+ * Provides access to Risk Passport deployments.
  */
 export interface DeployedBoardAPIProvider {
   /**
@@ -105,28 +105,28 @@ export interface DeployedBoardAPIProvider {
   readonly boardDeployments$: Observable<Array<Observable<BoardDeployment>>>;
 
   /**
-   * Joins or deploys a bulletin board contract.
+   * Joins or deploys a Risk Passport contract.
    *
    * @param contractAddress An optional contract address to use when resolving.
    * @returns An observable board deployment.
    *
    * @remarks
-   * For a given `contractAddress`, the method will attempt to find and join the identified bulletin board
+   * For a given `contractAddress`, the method will attempt to find and join the identified Risk Passport
    * contract; otherwise it will attempt to deploy a new one.
    */
   readonly resolve: (
-     contractAddress?: ContractAddress,
-     income?: bigint,
-     creditScore?: bigint,
-     debt?: bigint,
-   ) => Observable<BoardDeployment>;
+    contractAddress?: ContractAddress,
+    income?: bigint,
+    creditScore?: bigint,
+    debt?: bigint,
+  ) => Observable<BoardDeployment>;
 }
 
 /**
- * A {@link DeployedBoardAPIProvider} that manages bulletin board deployments in a browser setting.
+ * A {@link DeployedBoardAPIProvider} that manages Risk Passport deployments in a browser setting.
  *
  * @remarks
- * {@link BrowserDeployedBoardManager} configures and manages a connection to the Midnight Lace
+ * {@link BrowserDeployedBoardManager} configures and manages a connection to the 1AM
  * wallet, along with a collection of additional providers that work in a web-browser setting.
  */
 export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
@@ -148,10 +148,10 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
 
   /** @inheritdoc */
   resolve(
-     contractAddress?: ContractAddress,
-     income = 800000n,
-     creditScore = 750n,
-     debt = 200000n,
+    contractAddress?: ContractAddress,
+    income = 800000n,
+    creditScore = 750n,
+    debt = 200000n,
   ): Observable<BoardDeployment> {
     const deployments = this.#boardDeploymentsSubject.value;
     let deployment = deployments.find(
@@ -189,26 +189,21 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
   }
 
   private async deployDeployment(
-     deployment: BehaviorSubject<BoardDeployment>,
-     income: bigint,
-     creditScore: bigint,
-     debt: bigint,
+    deployment: BehaviorSubject<BoardDeployment>,
+    income: bigint,
+    creditScore: bigint,
+    debt: bigint,
   ): Promise<void> {
     try {
       const providers = await this.getProviders();
-      const api = await BBoardAPI.deploy(
-         providers,
-         income,
-         creditScore,
-         debt,
-         this.logger,
-  );
+      const api = await BBoardAPI.deploy(providers, income, creditScore, debt, this.logger);
 
       deployment.next({
         status: 'deployed',
         api,
       });
     } catch (error: unknown) {
+      this.logger.error({ error }, 'Risk passport deployment failed');
       deployment.next({
         status: 'failed',
         error: error instanceof Error ? error : new Error(String(error)),
@@ -229,6 +224,7 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
         api,
       });
     } catch (error: unknown) {
+      this.logger.error({ error }, 'Risk passport join failed');
       deployment.next({
         status: 'failed',
         error: error instanceof Error ? error : new Error(String(error)),
@@ -238,18 +234,39 @@ export class BrowserDeployedBoardManager implements DeployedBoardAPIProvider {
 }
 
 /** @internal */
+const withStage = async <T>(stage: string, action: () => Promise<T>): Promise<T> => {
+  try {
+    return await action();
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${stage}: ${message}`);
+  }
+};
+
+/** @internal */
 const initializeProviders = async (logger: Logger): Promise<BBoardProviders> => {
   const networkId = import.meta.env.VITE_NETWORK_ID as NetworkId;
-  const connectedAPI = await connectToWallet(logger, networkId);
+
+  const connectedAPI = await withStage('wallet connection', () => connectToWallet(logger, networkId));
+
   const zkConfigPath = new URL(import.meta.env.BASE_URL, window.location.origin).toString(); // '../../../contract/src/managed/bboard';
+  console.log('>>> ZK CONFIG BASE URL <<<', JSON.stringify(zkConfigPath));
   const keyMaterialProvider = new FetchZkConfigProvider<BBoardCircuitKeys>(zkConfigPath, fetch.bind(window));
-  const config = await connectedAPI.getConfiguration();
+  const config = await withStage('wallet configuration', () => connectedAPI.getConfiguration());
+  console.log('>>> PROVER URL FROM WALLET <<<', config.proverServerUri);
+  console.log('>>> INDEXER URL FROM WALLET <<<', config.indexerUri);
+
+  const proverServerUri = config.proverServerUri;
+  if (!proverServerUri) {
+    throw new Error('1AM wallet did not provide a prover server URL');
+  }
+
   const inMemoryBBoardPrivateStateProvider = inMemoryPrivateStateProvider<string, BBoardPrivateState>();
-  const shieldedAddresses = await connectedAPI.getShieldedAddresses();
+  const shieldedAddresses = await withStage('wallet addresses', () => connectedAPI.getShieldedAddresses());
   return {
     privateStateProvider: inMemoryBBoardPrivateStateProvider,
     zkConfigProvider: keyMaterialProvider,
-    proofProvider: httpClientProofProvider(config.proverServerUri!, keyMaterialProvider),
+    proofProvider: httpClientProofProvider(proverServerUri, keyMaterialProvider),
     publicDataProvider: indexerPublicDataProvider(config.indexerUri, config.indexerWsUri),
     walletProvider: {
       getCoinPublicKey(): string {
@@ -262,7 +279,7 @@ const initializeProviders = async (logger: Logger): Promise<BBoardProviders> => 
         try {
           logger.info({ tx, ttl }, 'Balancing transaction via wallet');
           const serializedTx = toHex(tx.serialize());
-          const received = await connectedAPI.balanceUnsealedTransaction(serializedTx);
+          const received = await connectedAPI.balanceUnsealedTransaction(serializedTx, { payFees: true });
           return Transaction.deserialize<SignatureEnabled, Proof, Binding>(
             'signature',
             'proof',
@@ -288,31 +305,128 @@ const initializeProviders = async (logger: Logger): Promise<BBoardProviders> => 
 };
 
 /** @internal */
-const getFirstCompatibleWallet = (): InitialAPI | undefined => {
-  if (!window.midnight) return undefined;
-  return Object.values(window.midnight).find(
-    (wallet): wallet is InitialAPI =>
+const COMPATIBLE_CONNECTOR_API_VERSION = '4.x';
+
+/**
+ * A wallet connector that is compatible with the DApp Connector API version
+ * supported by this application.
+ *
+ * @internal
+ */
+type CompatibleWallet = {
+  /**
+   * The key under which the wallet registered itself in `window.midnight`
+   * (e.g. `1am` for the 1AM wallet or `mnLace` for the Midnight Lace wallet).
+   */
+  readonly id: string;
+  readonly api: InitialAPI;
+};
+
+/** @internal */
+const getCompatibleWallets = (): CompatibleWallet[] => {
+  if (!window.midnight) return [];
+  return Object.entries(window.midnight).flatMap(([id, wallet]): CompatibleWallet[] => {
+    if (
       !!wallet &&
       typeof wallet === 'object' &&
       'apiVersion' in wallet &&
-      semver.satisfies(wallet.apiVersion, COMPATIBLE_CONNECTOR_API_VERSION),
-  );
+      semver.satisfies(wallet.apiVersion, COMPATIBLE_CONNECTOR_API_VERSION)
+    ) {
+      return [{ id, api: wallet }];
+    }
+    return [];
+  });
 };
 
-const COMPATIBLE_CONNECTOR_API_VERSION = '4.x';
+/** @internal */
+const is1AMWallet = (wallet: CompatibleWallet): boolean =>
+  [wallet.id, wallet.api.rdns, wallet.api.name]
+    .filter((value): value is string => !!value)
+    .join(' ')
+    .toLowerCase()
+    .includes('1am');
+
+/** @internal */
+const getPreferredCompatibleWallet = (): CompatibleWallet | undefined => {
+  const wallets = getCompatibleWallets();
+  // Prefer the 1AM wallet when present so that other compatible wallets
+  // (e.g. Midnight Lace) are not accidentally selected instead.
+  return wallets.find(is1AMWallet) ?? wallets[0];
+};
+
+/**
+ * Calls `connect()`, timeboxing only the waiting for the wallet's
+ * authorization popup. This step is gated on a human approving the
+ * connection, so it legitimately takes far longer than a plain API call while
+ * still failing instead of hanging if the popup is never acted upon.
+ *
+ * @internal
+ */
+const connectWithAuthorizationTimeout = async (
+  initialWallet: CompatibleWallet,
+  networkId: string,
+): Promise<ConnectedAPI> => {
+  const authorizationTimeout = new Promise<never>((_, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error('Timed out waiting for 1AM authorization. Did you approve the connection in the 1AM wallet popup?'),
+        ),
+      120_000,
+    ),
+  );
+
+  return Promise.race([initialWallet.api.connect(networkId), authorizationTimeout]);
+};
+
+/**
+ * Polls the connected wallet until it reports a `connected` state instead of
+ * assuming `getConnectionStatus()` is already settled the moment `connect()`
+ * resolves (which is not guaranteed for every connector). Throws with the last
+ * observed status if the wallet never becomes connected.
+ *
+ * @internal
+ */
+const waitForConnectedStatus = async (connectedAPI: ConnectedAPI, logger: Logger): Promise<ConnectionStatus> => {
+  const statusTimeoutMs = 10_000;
+  const pollIntervalMs = 250;
+  const deadline = new Date(Date.now() + statusTimeoutMs);
+  let lastStatus: ConnectionStatus | undefined;
+
+  while (new Date() < deadline) {
+    lastStatus = await connectedAPI.getConnectionStatus();
+    if (lastStatus.status === 'connected') {
+      return lastStatus;
+    }
+    logger.trace({ status: lastStatus.status }, 'Wallet connection not ready yet; retrying');
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  throw new Error(`Wallet connection did not become "connected" (last status: ${lastStatus?.status ?? 'unknown'})`);
+};
 
 /** @internal */
 const connectToWallet = (logger: Logger, networkId: string): Promise<ConnectedAPI> => {
   return firstValueFrom(
     fnPipe(
       interval(100),
-      map(() => getFirstCompatibleWallet()),
-      tap((connectorAPI) => {
-        logger.info(connectorAPI, 'Check for wallet connector API');
+      map(() => getPreferredCompatibleWallet()),
+      tap((wallet) => {
+        if (wallet) {
+          logger.info(
+            { walletId: wallet.id, walletName: wallet.api.name, apiVersion: wallet.api.apiVersion },
+            is1AMWallet(wallet) ? 'Using 1AM wallet connector' : 'Using compatible wallet connector',
+          );
+        } else {
+          logger.info('Check for wallet connector API');
+        }
       }),
-      filter((connectorAPI): connectorAPI is InitialAPI => !!connectorAPI),
-      tap((connectorAPI) => {
-        logger.info(connectorAPI, 'Compatible wallet connector API found. Connecting.');
+      filter((wallet): wallet is CompatibleWallet => !!wallet),
+      tap((wallet) => {
+        logger.info(
+          { walletId: wallet.id, walletName: wallet.api.name, apiVersion: wallet.api.apiVersion },
+          'Compatible wallet connector API found. Connecting.',
+        );
       }),
       take(1),
       timeout({
@@ -321,32 +435,44 @@ const connectToWallet = (logger: Logger, networkId: string): Promise<ConnectedAP
           throwError(() => {
             logger.error('Could not find wallet connector API');
 
-            return new Error('Could not find Midnight Lace wallet. Extension installed?');
+            return new Error(
+              'Could not find the 1AM wallet connector. Please make sure the 1AM wallet extension is installed and enabled, then retry.',
+            );
           }),
       }),
-      concatMap(async (initialAPI) => {
-        const connectedAPI = await initialAPI.connect(networkId);
-        const connectionStatus = await connectedAPI.getConnectionStatus();
-        logger.info(connectionStatus, 'Wallet connector API enabled status');
+      concatMap(async (initialWallet) => {
+        logger.info(
+          { walletId: initialWallet.id, walletName: initialWallet.api.name },
+          'Prompting 1AM wallet authorization popup',
+        );
+        console.log(
+          '>>> PROMPTING WALLET AUTHORIZATION <<<',
+          JSON.stringify({ walletId: initialWallet.id, walletName: initialWallet.api.name }),
+        );
+        const connectedAPI = await connectWithAuthorizationTimeout(initialWallet, networkId);
+        const connectionStatus = await waitForConnectedStatus(connectedAPI, logger);
+        const status = {
+          walletId: initialWallet.id,
+          walletName: initialWallet.api.name,
+          apiVersion: initialWallet.api.apiVersion,
+          connectionStatus: connectionStatus.status,
+          requestedNetworkId: networkId,
+          walletNetworkId: 'networkId' in connectionStatus ? connectionStatus.networkId : undefined,
+        };
+        logger.info(status, 'Wallet connector API enabled status');
+        console.log('>>> WALLET CONNECTED <<<', JSON.stringify(status));
         return connectedAPI;
       }),
-      timeout({
-        first: 5_000,
-        with: () =>
-          throwError(() => {
-            logger.error('Wallet connector API has failed to respond');
-
-            return new Error('Midnight Lace wallet has failed to respond. Extension enabled?');
-          }),
+      catchError((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        const stack = error instanceof Error ? error.stack : undefined;
+        logger.error({ errorMessage: message, stack }, 'Wallet connector API error (diagnostic)');
+        console.error('>>> WALLET CONNECTOR ERROR <<<', message);
+        if (stack) {
+          console.error(stack);
+        }
+        return throwError(() => (error instanceof Error ? error : new Error(message)));
       }),
-      catchError((error, apis) =>
-        error
-          ? throwError(() => {
-              logger.error('Unable to enable connector API' + error);
-              return new Error('Application is not authorized');
-            })
-          : apis,
-      ),
     ),
   );
 };

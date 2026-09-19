@@ -9,6 +9,7 @@ import {
   CardHeader,
   Button,
   Typography,
+  TextField,
   Chip,
   Box,
   Alert,
@@ -47,8 +48,36 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
   const [eligibilityResult, setEligibilityResult] = useState<boolean>();
 
-  const onCreateBoard = useCallback(() => boardApiProvider.resolve(), [boardApiProvider]); 
- 
+  const [income, setIncome] = useState('');
+  const [creditScore, setCreditScore] = useState('');
+  const [debt, setDebt] = useState('');
+  const [inputError, setInputError] = useState<string>();
+
+  const onCreateBoard = useCallback(() => {
+    setInputError(undefined);
+
+    if (!income || !creditScore || !debt) {
+      setInputError('Please enter income, credit score, and total debt.');
+      return;
+    }
+
+    if (!/^\d+$/.test(income) || !/^\d+$/.test(creditScore) || !/^\d+$/.test(debt)) {
+      setInputError('Please enter valid whole-number financial values.');
+      return;
+    }
+
+    const incomeValue = BigInt(income);
+    const creditScoreValue = BigInt(creditScore);
+    const debtValue = BigInt(debt);
+
+    if (incomeValue <= 0n || creditScoreValue <= 0n || debtValue < 0n) {
+      setInputError('Please enter valid financial values.');
+      return;
+    }
+
+    boardApiProvider.resolve(undefined, incomeValue, creditScoreValue, debtValue);
+  }, [boardApiProvider, income, creditScore, debt]);
+
   const onIssueCredential = useCallback(async () => {
     if (!deployedBoardAPI) return;
 
@@ -60,7 +89,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
       await deployedBoardAPI.issueCredential();
 
-      setSuccessMessage('Risk credential issued successfully.');
+      setSuccessMessage('Eligibility credential issued successfully.');
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -175,18 +204,50 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
             Private Credit & Risk Passport
           </Typography>
 
-          <Typography color="text.secondary">Create or join a private financial risk credential.</Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            Enter your financial information privately. These values are used as private witnesses and are not displayed
+            on the public credential.
+          </Typography>
 
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Annual Income (₹)"
+              type="number"
+              value={income}
+              onChange={(event) => setIncome(event.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Credit Score"
+              type="number"
+              value={creditScore}
+              onChange={(event) => setCreditScore(event.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Total Debt (₹)"
+              type="number"
+              value={debt}
+              onChange={(event) => setDebt(event.target.value)}
+              fullWidth
+            />
+
+            <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Eligibility requirements
+              </Typography>
+              <Typography variant="body2">Income ≥ ₹6,00,000</Typography>
+              <Typography variant="body2">Credit Score ≥ 700</Typography>
+              <Typography variant="body2">Debt-to-Income Ratio ≤ 40%</Typography>
+            </Box>
+
+            {inputError && <Alert severity="error">{inputError}</Alert>}
+
             <Button variant="contained" onClick={onCreateBoard} fullWidth>
               Deploy Risk Passport
             </Button>
-
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                To join an existing pass, use the contract address option provided by the application.
-              </Typography>
-            </Box>
           </Box>
         </CardContent>
       )}
@@ -220,7 +281,9 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
             subheader={
               deployedBoardAPI
                 ? toShortFormatContractAddress(deployedBoardAPI.deployedContractAddress)
-                : 'Loading contract...'
+                : boardDeployment?.status === 'failed'
+                  ? 'Deployment failed'
+                  : 'Loading contract...'
             }
             action={
               deployedBoardAPI ? (
@@ -258,7 +321,20 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
                   <Typography variant="h6">{boardState.credentialVersion.toString()}</Typography>
                 </Box>
+              </Box>
+            ) : (
+              <>
+                <Skeleton variant="rectangular" width="100%" height={120} />
+                {boardDeployment?.status === 'in-progress' && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    Deploying your Risk Passport. Please approve the transaction in your 1AM wallet.
+                  </Alert>
+                )}
+              </>
+            )}
 
+            {(eligibilityResult !== undefined || successMessage || errorMessage) && (
+              <Box sx={{ mt: 2 }}>
                 {eligibilityResult === true && (
                   <Alert severity="success" sx={{ mb: 2 }}>
                     Risk eligibility verified ✓
@@ -283,8 +359,6 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                   </Alert>
                 )}
               </Box>
-            ) : (
-              <Skeleton variant="rectangular" width="100%" height={180} />
             )}
           </CardContent>
 

@@ -17,8 +17,6 @@ constructor() {
   credentialVersion.increment(1);
 }
 
-witness localSecretKey(): Bytes<32>;
-
 witness userIncome(): Uint<64>;
 
 witness userCreditScore(): Uint<16>;

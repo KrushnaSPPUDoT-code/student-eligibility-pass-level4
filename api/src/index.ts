@@ -116,18 +116,20 @@ export class BBoardAPI implements DeployedBBoardAPI {
     debt: bigint,
     logger?: Logger,
   ): Promise<BBoardAPI> {
-    logger?.info('deployContract');
+    logger?.info('DEPLOY STEP 1: entering BBoardAPI.deploy');
+    logger?.info('DEPLOY STEP 2: private financial witnesses prepared (values kept private)');
+
+    logger?.info('DEPLOY STEP 3: calling deployContract');
+    console.log('>>> DEPLOY STEP 3: calling deployContract <<<');
 
     const deployedBBoardContract = await deployContract(providers, {
       compiledContract: CompiledBBoardContractContract,
       privateStateId: bboardPrivateStateKey,
-      initialPrivateState: createBBoardPrivateState(
-          utils.randomBytes(32),
-          income,
-          creditScore,
-          debt,
-  ),
+      initialPrivateState: createBBoardPrivateState(utils.randomBytes(32), income, creditScore, debt),
     });
+
+    logger?.info('DEPLOY STEP 4: deployContract completed');
+    console.log('>>> DEPLOY STEP 4: deployContract completed <<<');
 
     logger?.trace({
       contractDeployed: {

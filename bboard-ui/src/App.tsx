@@ -21,11 +21,11 @@ import { type BoardDeployment } from './contexts';
 import { type Observable } from 'rxjs';
 
 /**
- * The root bulletin board application component.
+ * The root Risk Passport application component.
  *
  * @remarks
  * The {@link App} component requires a `<DeployedBoardProvider />` parent in order to retrieve
- * information about current bulletin board deployments.
+ * information about current Risk Passport deployments.
  *
  * @internal
  */

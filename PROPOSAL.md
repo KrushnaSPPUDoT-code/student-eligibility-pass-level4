@@ -1,143 +1,158 @@
-# Private Student Eligibility Pass — Product Proposal
+# TrustPass — Product Proposal
+
+**Privacy-Preserving Financial Eligibility / Private Credit Risk Passport on Midnight**
 
 ## 1. Product Idea
 
-Private Student Eligibility Pass is a privacy-preserving credential application built on the Midnight blockchain.
+TrustPass is a privacy-preserving financial eligibility credential built on the
+Midnight blockchain. A user holds sensitive financial facts — annual income,
+credit score, and total debt — **privately**, and can prove that they satisfy
+predefined financial eligibility rules without publishing the exact values.
 
-The application allows a student to hold academic eligibility information privately and prove that they satisfy predefined eligibility requirements without publicly revealing the underlying academic values.
+The MVP eligibility rules are:
 
-For this Level 3 implementation, the eligibility requirements are:
+- Income ≥ ₹600,000
+- Credit Score ≥ 700
+- Debt-to-Income Ratio ≤ 40%
 
-- CGPA >= 8.00
-- Attendance >= 75%
-
-A student can prove eligibility without exposing their exact CGPA or attendance percentage to observers.
+A user proves "I meet all three requirements" without revealing any of the
+underlying numbers to on-chain observers or verifiers.
 
 ## 2. Problem
 
-Students frequently need to prove that they satisfy academic requirements for scholarships, internships, programs, applications, and other opportunities.
+Financial eligibility checks are everywhere:
 
-Traditional verification requires sharing sensitive academic information such as:
+- loan and credit applications
+- credit-limit and BNPL approvals
+- rent and lease agreements
+- insurance underwriting
+- employer-backed lending programs
 
-- CGPA
-- Attendance
-- Academic credentials
+Traditional verification forces the applicant to expose sensitive data such as
+salary slips, credit reports, and full debt statements. This reveals more than
+the verifier needs: if a lender only requires income ≥ ₹600,000, it should not
+need to know the applicant's exact income. Broad disclosure increases identity
+theft risk, discourages applicants, and is technically unnecessary when a
+zero-knowledge proof can answer just the eligibility question.
 
-This reveals more information than the verifier actually needs.
+## 3. Target Users
 
-For example, if an opportunity only requires a CGPA of at least 8.00, the verifier does not need to know whether the student's CGPA is 8.21, 9.10, or 9.80.
+- Individuals applying for credit, loans, or rent
+- Lenders and credit institutions that need eligibility verification
+- Credit bureaus that want to issue verifiable eligibility credentials
+- Any verifier that only needs a "pass/fail" eligibility decision
 
-## 3. Proposed Solution
+## 4. Proposed Solution
 
-The Student Eligibility Pass stores the student's eligibility-related information as private state and uses a Midnight smart contract to verify eligibility.
+TrustPass keeps the user's financial values in **private state** and evaluates
+eligibility inside a **Midnight Compact smart contract**:
 
-The student can:
+1. The user enters income, credit score, and debt locally.
+2. The contract's witnesses provide these values to the circuit privately.
+3. The circuit asserts the three eligibility rules.
+4. The result is a credential whose public state records only that the credential
+   is active, its version, and issuance metadata.
+5. The holder can later produce an eligibility proof and can revoke the
+   credential when required.
 
-1. Issue a credential.
-2. Keep the academic values private.
-3. Generate an eligibility proof.
-4. Demonstrate that the eligibility conditions are satisfied.
-5. Revoke the credential when required.
+## 5. Why Midnight
 
-The proof verifies the required conditions without revealing the underlying academic values.
+Midnight's Compact language + zero-knowledge proving is the enabling technology:
 
-## 4. Privacy Model
+- **Private execution:** witnesses and private state never touch the public ledger.
+- **Public verifiability:** the proof result and credential state are on-chain.
+- **Programmable policy:** the eligibility rules are explicit Compact asserts.
+- **Wallet user experience:** the Lace wallet manages keys, balancing, and
+  transaction submission through the DApp Connector API v4.
 
-Privacy is the core feature of the product.
+## 6. Privacy Model
 
-### Private information
+### Private
 
-The following information is intended to remain private to the credential holder:
+- `income`
+- `creditScore`
+- `debt`
+- `secretKey`
 
-- Exact CGPA
-- Exact attendance percentage
-- Other private credential state used to evaluate eligibility
+### Public
 
-### What an observer can learn
+- credential active state
+- credential version
+- credential commitment / issuer identifiers
+- transaction and contract metadata
+- proof result/state
 
-An observer can learn that an eligibility verification/proof operation occurred and can observe public blockchain information associated with the contract and transaction.
+An on-chain observer can see that an eligibility credential exists and when it is
+issued, proved, or revoked — but **cannot** learn the exact income, credit score,
+or debt.
 
-### What an observer cannot learn
+## 7. Circuits
 
-An observer should not be able to derive the student's exact:
+The Compact contract defines four circuits:
 
-- CGPA
-- Attendance percentage
-- Private credential state
+| Circuit | Description |
+|---|---|
+| `issueCredential` | Fails if a credential is already active; enforces income ≥ 600000, credit ≥ 700, DTI ≤ 40% against private witnesses; sets `active = true` |
+| `proveEligibility` | Fails if inactive; re-enforces the same private-witness rules; returns `true` |
+| `revokeCredential` | Fails if inactive; sets `active = false` and increments the version |
+| `publicKey` | Derives a public key from holder/secret material (used for identity binding) |
 
-The purpose of the application is therefore to prove a statement about the student's eligibility rather than disclose the underlying academic records.
+## 8. Private Witnesses
 
-## 5. Target Users
+- `userIncome` → returns `privateState.income`
+- `userCreditScore` → returns `privateState.creditScore`
+- `userDebt` → returns `privateState.debt`
 
-The primary users are:
+The private state type `BBoardPrivateState` contains `secretKey`, `income`,
+`creditScore`, and `debt`.
 
-- Students
-- Universities and educational institutions
-- Scholarship providers
-- Internship and program administrators
-- Organizations that need eligibility verification
+## 9. Public Ledger
 
-## 6. Example Use Case
+The ledger holds only:
 
-Suppose a scholarship requires:
+- `active: Boolean`
+- `credentialVersion: Counter`
+- `credentialCommitment: Bytes<32>`
+- `issuer: Bytes<32>`
 
-- CGPA >= 8.00
-- Attendance >= 75%
+No field contains income, credit-score, or debt values.
 
-A student with:
+## 10. MVP Scope
 
-- CGPA = 8.70
-- Attendance = 87%
+Implemented today:
 
-can prove that they satisfy the requirements without revealing those exact numbers to the observer.
+- Compact contract with the three credential circuits
+- Private-state witnesses for the three financial values
+- Midnight.js API (`deploy`, `join`, `issueCredential`, `proveEligibility`,
+  `revokeCredential`)
+- React + Vite frontend with Lace (Preprod) wallet integration
+- Boundary/edge-case contract test suite (17 tests)
+- CI/CD: contract compile + tests + typecheck + lint + build, GitHub Pages deploy
+- Local Docker proof server for Lace proving on Preprod
 
-The verifier receives the eligibility result rather than the student's complete academic record.
+Not in MVP scope:
 
-## 7. Midnight Technology
+- issuer-signed credentials (currently self-declared)
+- selective disclosure of individual rules
+- credential expiry
+- verifier-facing dashboard
 
-The application uses the Midnight privacy model and Compact smart contracts.
+## 11. Success Criteria
 
-The Level 3 implementation includes:
+TrustPass is successful when a user with Preprod-funded Lace can:
 
-- Compact smart contract
-- Midnight SDK integration
-- Private state handling
-- Eligibility proof circuit
-- Credential issuance
-- Credential revocation
-- Browser-based frontend
-- Midnight Preprod network support
+1. Connect Lace.
+2. Enter private financial values.
+3. Deploy the Risk Passport.
+4. Issue an eligibility credential (public state shows active).
+5. Produce an eligibility proof without revealing values.
+6. Revoke the credential and observe the version counter increment.
 
-## 8. Level 3 Functionality
+## 12. Future Expansion
 
-The implemented contract provides the following core operations:
-
-- `issueCredential`
-- `proveEligibility`
-- `revokeCredential`
-
-The project includes automated contract tests and CI/CD workflows.
-
-## 9. Success Criteria
-
-The product is successful when a student can:
-
-1. Connect their Midnight wallet.
-2. Issue a private eligibility credential.
-3. Prove eligibility against the required thresholds.
-4. Receive a successful eligibility verification result.
-5. Keep the underlying academic values private.
-
-## 10. Future Scope
-
-Future versions can support:
-
-- Multiple credential types
-- University-issued credentials
-- Different eligibility policies
-- Scholarship-specific requirements
-- Internship and program verification
-- Credential expiration
-- Selective disclosure
-- Verifier-facing interfaces
-- Additional privacy-preserving academic attributes
+- Issuer-endorsed credentials (banks / credit bureaus sign the private facts)
+- Selective disclosure (prove only the income rule, not all three)
+- Per-policy configurable thresholds without redeploying
+- Credential expiry and auto-suspension
+- Verifier endpoints / QR verification flows
+- Additional financial metrics (e.g. savings buffer, repayment history)

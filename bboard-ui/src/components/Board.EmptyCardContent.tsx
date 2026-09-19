@@ -27,14 +27,14 @@ import { TextPromptDialog } from './TextPromptDialog';
  * @internal
  */
 export interface EmptyCardContentProps {
-  /** A callback that will be called to create a new bulletin board. */
+  /** A callback that will be called to create a new Risk Passport. */
   onCreateBoardCallback: () => void;
-  /** A callback that will be called to join an existing bulletin board. */
+  /** A callback that will be called to join an existing Risk Passport. */
   onJoinBoardCallback: (contractAddress: ContractAddress) => void;
 }
 
 /**
- * Used when there is no board deployment to render a UI allowing the user to join or deploy bulletin boards.
+ * Used when there is no deployment to render a UI allowing the user to join or deploy a Risk Passport.
  *
  * @internal
  */
@@ -51,16 +51,16 @@ export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
           <BoardAddIcon fontSize="large" />
         </Typography>
         <Typography data-testid="board-posted-message" align="center" variant="body2" color="primary.dark">
-          Create a new Board, or join an existing one...
+          Deploy a new Risk Passport, or join an existing one...
         </Typography>
       </CardContent>
       <CardActions disableSpacing sx={{ justifyContent: 'center' }}>
-        <Tooltip title="Create a new board">
+        <Tooltip title="Deploy a new Risk Passport">
           <IconButton data-testid="board-deploy-btn" onClick={onCreateBoardCallback}>
             <CreateBoardIcon />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Join an existing board">
+        <Tooltip title="Join an existing Risk Passport">
           <IconButton
             data-testid="board-join-btn"
             onClick={() => {

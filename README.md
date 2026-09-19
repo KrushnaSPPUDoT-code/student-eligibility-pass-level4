@@ -1,301 +1,263 @@
-# Student Eligibility Pass
+# TrustPass
+
+**Privacy-Preserving Financial Eligibility Passport on Midnight**
 
 [![CI](../../actions/workflows/ci.yaml/badge.svg)](../../actions/workflows/ci.yaml)
 
-A privacy-preserving student eligibility dApp built on the [Midnight Network](https://midnight.network/).
+TrustPass is a Level 4 Midnight Network MVP that lets a user prove they satisfy
+predefined financial eligibility rules **without exposing their exact income,
+credit score, or total debt on-chain**.
 
-Student Eligibility Pass allows a student to prove that they satisfy academic eligibility requirements without revealing their exact CGPA or attendance.
-
-The project demonstrates Midnight's privacy model, Compact smart contracts, private state, witnesses, and zero-knowledge proofs.
+The project is built on Midnight's Compact smart-contract architecture with
+Midnight.js, ZK proofs, the Lace wallet, and the Midnight Preprod network.
 
 ---
 
-## 🎯 Project Overview
+## Problem
 
-Educational institutions may need to verify whether a student satisfies requirements such as:
+Traditional financial eligibility checks (lending, credit limits, loan
+applications, rent approvals) require applicants to share sensitive financial
+data:
 
-- Minimum CGPA
-- Minimum attendance
+- Annual income
+- Credit score
+- Total debt
 
-Traditional verification requires students to disclose their actual academic values.
+This reveals far more information than a verifier actually needs. For example,
+if a lender only needs to know that income is at least ₹600,000, it does not
+need to see the exact income figure.
 
-**Student Eligibility Pass allows a student to prove eligibility without revealing the underlying CGPA or attendance values.**
+## Solution
 
-### Eligibility Requirements
+TrustPass stores the user's financial values as **private witnesses** and uses a
+Midnight Compact smart contract to prove eligibility against fixed thresholds.
+The verifier receives a zero-knowledge proof and the resulting public credential
+state — never the underlying numbers.
+
+The exact income, credit score, and debt values are used as private witnesses
+and are **not displayed on the public credential**.
+
+## Rules
 
 | Requirement | Threshold |
 |---|---:|
-| CGPA | ≥ 8.00 |
-| Attendance | ≥ 75% |
+| Annual income | ≥ ₹600,000 |
+| Credit score | ≥ 700 |
+| Debt-to-Income (DTI) ratio | ≤ 40% |
 
-The student's actual academic values are maintained in private state and accessed by the Compact contract through witness functions.
+The debt-to-income check is implemented as `debt * 100 <= income * 40`.
 
----
+## Privacy model
 
-## ✨ Features
+### Private (never written to the public ledger)
 
-- 🔐 Privacy-preserving eligibility verification
-- 🎓 Student eligibility credential
-- 🧾 Credential issuance
-- ✅ Zero-knowledge eligibility proof
-- 🔄 Credential revocation
-- 📊 Public credential status
-- 🔢 Credential version tracking
-- 👛 Midnight wallet integration
-- 🌐 Midnight Preprod support
-- ⚡ React + TypeScript frontend
-- 🧩 Compact smart contract
-- 📋 Contract address display and copy functionality
+- `income`
+- `credit score`
+- `debt`
+- `secretKey` (holder secret)
 
----
+### Public (visible on-chain)
 
-## 🔒 Privacy Model
+- credential active state (`active`)
+- credential version (`credentialVersion`)
+- credential commitment / issuer identifiers
+- transaction and contract metadata
 
-Privacy is the central purpose of Student Eligibility Pass.
+## Architecture
 
-### Private Information
+- **Frontend:** React + TypeScript + Vite + Material UI
+- **Contracts:** Compact smart contracts compiled to ZK circuits
+- **Client:** Midnight.js (`@midnight-ntwrk/*` 4.1.1)
+- **Wallet:** Lace (Midnight edition), DApp Connector API v4
+- **Network:** Midnight Preprod
+- **Proving:** Local Docker proof server (`midnightntwrk/proof-server:8.0.3`)
+- **CI/CD:** GitHub Actions (compile, test, typecheck, lint, build, deploy to GitHub Pages)
 
-The following information remains private:
+## Smart contract
 
-- Student CGPA
-- Student attendance
-- Student secret/private state
+The TrustPass Compact contract (`contract/src/bboard.compact`) defines three
+circuits:
 
-The student's exact academic values do not need to be published to the blockchain.
+| Circuit | Behaviour |
+|---|---|
+| `issueCredential` | Fails if a credential is already active; reads income, credit score and debt from private witnesses; asserts all eligibility rules; sets `active = true` |
+| `proveEligibility` | Fails if the credential is inactive; re-asserts the same private-witness eligibility checks; returns `true` on success |
+| `revokeCredential` | Fails if the credential is inactive; sets `active = false` and increments `credentialVersion` |
 
-Witness functions provide the private values to the Compact circuit when generating the eligibility proof.
+Private state (`BBoardPrivateState`) contains `secretKey`, `income`, `creditScore`
+and `debt`. Witnesses (`userIncome`, `userCreditScore`, `userDebt`) hand the
+private values to the circuits only during proof generation.
 
-### What a Blockchain Observer Can Learn
+## User flow
 
-An observer can see publicly observable information such as:
+1. Connect the Lace wallet (Preprod).
+2. Enter private financial values (income, credit score, total debt).
+3. Deploy/issue the TrustPass credential.
+4. Prove eligibility.
+5. Verify credential status.
+6. Revoke (invalidate) the credential when required.
 
-- Contract address
-- Public contract state
-- Credential status
-- Credential version
-- Public transaction information
-- Public state resulting from contract operations
+## Repository layout
 
-### What an Observer Cannot Learn
-
-The eligibility proof does not reveal the student's exact:
-
-- CGPA
-- Attendance
-
-For example, the student can prove:
-
-```text
-CGPA ≥ 8.00
-Attendance ≥ 75%
+```
+.
+├── contract/            # Compact contract, witnesses, managed ZK artifacts, tests
+├── api/                 # Midnight.js API wrapper (deploy, join, issue, prove, revoke)
+├── bboard-ui/           # React + Vite frontend
+├── bboard-cli/          # Optional Node CLI (deploy / join / interact) — dev tool
+├── proof-server-local.yml  # Local Docker proof server for Preprod
+└── .github/workflows/   # CI + GitHub Pages deployment
 ```
 
-without publishing values such as:
+> Internal class/file names (e.g. `BBoard*`, `bboard-ui`) are inherited from the
+> official Midnight example architecture and are kept intentionally to minimise
+> refactoring risk. They do not affect product behaviour.
 
-```text
-CGPA = 8.50
-Attendance = 85%
-```
+## Prerequisites
 
-The purpose of the zero-knowledge proof is to demonstrate that the required conditions are satisfied without revealing the underlying private values.
+- Node.js >= 24.11.1
+- npm (workspace-managed, uses `--legacy-peer-deps` configured via `.npmrc`)
+- Docker Desktop (for the local proof server)
+- Midnight Compact compiler (`compact`) — the CI workflow installs it via the
+  Midnight setup action
+- Lace wallet (Midnight edition), browser extension installed, unlocked, and
+  **funded on Preprod**
+- (Optional) Midnight browser extensions that also expose the DApp Connector API,
+  e.g. 1AM — TrustPass prefers Lace when it is present
 
-🧪 How the Privacy Proof Works
-Student
-   │
-   │ Private CGPA + Attendance
-   ▼
-Private State
-   │
-   │ Witness Functions
-   ▼
-Compact Smart Contract
-   │
-   │ Eligibility Circuit
-   ▼
-Zero-Knowledge Proof
-   │
-   ▼
-Midnight Network
-   │
-   ├── Public Credential Status
-   ├── Credential Version
-   └── Public Transaction State
-Step-by-step
-The student's academic information is stored in private state.
-Witness functions provide the private values to the Compact circuit.
-The eligibility circuit evaluates the required conditions.
-Midnight generates a zero-knowledge proof.
-The blockchain records the appropriate public state and transaction information.
-The exact CGPA and attendance values remain private.
-🏗️ Architecture
-                    Student
-                       │
-                       ▼
-              Midnight Wallet
-                       │
-                       ▼
-             React + TypeScript UI
-                       │
-                       ▼
-                Midnight.js API
-                       │
-                       ▼
-              Compact Smart Contract
-                       │
-          ┌────────────┼────────────┐
-          │            │            │
-          ▼            ▼            ▼
-       Issue        Prove        Revoke
-     Credential   Eligibility   Credential
-                       │
-                       ▼
-              Zero-Knowledge Proof
-                       │
-                       ▼
-                Midnight Preprod
-📁 Project Structure
-student-eligibility-pass-level4/
-│
-├── contract/
-│   └── src/
-│       ├── bboard.compact
-│       ├── index.ts
-│       ├── witnesses.ts
-│       └── managed/
-│
-├── api/
-│   └── src/
-│       ├── index.ts
-│       └── common-types.ts
-│
-├── bboard-ui/
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   ├── contexts/
-│   │   └── hooks/
-│   └── public/
-│
-└── README.md
-⚙️ Prerequisites
+## Setup
 
-Install:
-
-Node.js
-npm
-Docker Desktop
-Midnight Compact compiler
-Midnight-compatible wallet
-
-The application is designed to work with the Midnight Preprod network.
-
-🚀 Installation
-
-Clone the repository:
-
+```bash
 git clone https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level4.git
 cd student-eligibility-pass-level4
+npm install --legacy-peer-deps
+```
 
-Install dependencies:
+## Start the proof server (required for Lace proving)
 
-npm install
-🧪 Run Tests
+Lace proves locally with the `midnightntwrk/proof-server` container. It must be
+running and reachable at `http://localhost:6300`:
 
-Run the contract test suite:
+```bash
+docker compose -f proof-server-local.yml up -d
+```
 
+Verify it is healthy:
+
+```bash
+docker ps | grep proof-server-local
+```
+
+The frontend falls back to `http://localhost:6300` when the wallet does not
+supply an explicit prover URI. If you configure a different proof server in Lace
+(Settings → Midnight), that URI is used instead.
+
+## Preprod frontend
+
+The network is driven by Vite modes:
+
+- `.env.preprod` → `VITE_NETWORK_ID=preprod`
+- `.env.preview` → `VITE_NETWORK_ID=preview`
+
+Run the UI against **Preprod** (loads `.env.preprod`):
+
+```bash
+cd bboard-ui
+npm run dev:preprod
+```
+
+> Plain `npm run dev` uses Vite's default mode and does **not** load `.env.preprod`.
+
+Build for Preprod + GitHub Pages base path:
+
+```bash
+cd bboard-ui
+npm run build
+```
+
+The build script (a) types-checks and bundles the app with
+`vite build --mode preprod`, and (b) copies the managed ZK artifacts
+(`keys/`, `zkir/`) from `contract/src/managed/bboard` into `dist/`.
+
+## Tests
+
+Contract tests (17 scenarios including boundary/edge cases):
+
+```bash
 cd contract
+npm run compact   # regenerate managed artifacts from the Compact source
+npm run build
 npm test -- --run
+```
 
-The current test suite contains 9 tests covering:
+API checks:
 
-Credential initialization
-Credential issuance
-Successful eligibility proof
-Insufficient CGPA rejection
-Insufficient attendance rejection
-Duplicate credential prevention
-Credential revocation
-Proof without an active credential
-Proof after credential revocation
-🔍 Validation
+```bash
+cd api
+npm run ci
+```
 
-Run the complete workspace checks:
+Frontend checks:
 
-npm run ci --workspace api
-npm run ci --workspace contract
-npm run ci --workspace bboard-ui
+```bash
+cd bboard-ui
+npm run typecheck
+npm run lint
+npm run build
+```
 
-These checks perform TypeScript validation, linting, builds, and contract tests.
+## Wallet setup
 
-🌐 Application Flow
+1. Install the **Lace** Midnight wallet extension and unlock it.
+2. Set the network to **Preprod**.
+3. Fund the wallet with NIGHT (Preprod faucet).
+4. Open the TrustPass frontend and click **Deploy Risk Passport**.
+5. Approve the connection and the deploy transaction in Lace.
 
-The application provides the following flow:
+TrustPass selects Lace automatically. If multiple compatible wallets are
+installed (e.g. 1AM), Lace is preferred; the first compatible connector is used
+only as a fallback.
 
-Connect the Midnight wallet.
-Create or load the Student Eligibility Pass contract.
-Issue an eligibility credential.
-Generate a privacy-preserving eligibility proof.
-View the public credential status.
-Revoke the credential when required.
+## Privacy in depth
 
-The exact academic values remain private during eligibility verification.
+The ledger state contains only:
 
-🔐 Smart Contract Operations
+- `active: Boolean`
+- `credentialVersion: Counter`
+- `credentialCommitment: Bytes<32>`
+- `issuer: Bytes<32>`
 
-The Compact smart contract provides three primary operations:
+No income, credit-score, or debt field is ever written to public contract state.
+During a proof, `userIncome`, `userCreditScore`, and `userDebt` witnesses feed
+the private values into the circuit inside the proving step; the proof only
+asserts the eligibility conditions.
 
-issueCredential
+## Contract address
 
-Issues a credential when the student's private academic information satisfies the eligibility requirements.
+**Placeholder — pending real Preprod deployment.**
 
-proveEligibility
+The UI deploys a fresh contract per session with the funded Lace wallet and shows
+the returned address. A fixed address will be added here only after a real
+deployment has produced one.
 
-Generates a proof that the student satisfies the required conditions without exposing the exact CGPA or attendance.
+## Deployed frontend
 
-revokeCredential
+**Placeholder — pending GitHub Pages deployment.**
 
-Revokes an active eligibility credential.
+The GitHub Actions workflow `deploy-pages.yml` deploys the built `bboard-ui/dist`
+to GitHub Pages at the repo URL when main is updated. The Vite `base` is set to
+`/student-eligibility-pass-level4/` so ZK assets resolve correctly under the
+Pages sub-path.
 
-🧪 Test Results
+## CI/CD
 
-The current contract test suite contains:
+Three workflows under `.github/workflows/`:
 
-Test Files  1 passed (1)
-Tests       9 passed (9)
+- `ci.yaml` — compiles the contract, runs contract tests, api checks, and
+  frontend typecheck/lint/build on every push/PR to `main`.
+- `deploy-pages.yml` — builds and deploys the frontend to GitHub Pages.
+- `scan.yaml` — Midnight code scan.
 
-The tests verify both successful and rejected eligibility scenarios.
+## License
 
-🔄 CI/CD
-
-The repository includes a GitHub Actions workflow that automatically validates the project.
-
-The CI pipeline checks the project's TypeScript, linting, build, and testing requirements.
-
-Repository:
-
-https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level4
-
-🎥 Demo
-
-A live demonstration and demo video will be provided as part of the project submission.
-
-The demonstration covers:
-
-Wallet connection
-Credential creation
-Eligibility proof
-Privacy-preserving verification
-Credential revocation
-📜 License
-
-This project is based on Midnight's example dApp structure and is intended for educational and demonstration purposes.
-
-## 🔗 Midnight Preprod Contract
-
-The Student Eligibility Pass contract is deployed on the **Midnight Preprod network**.
-
-**Preprod Contract Address:**
-
-`0200dbf964f541e1950883f5b2f539b66fd6111e46ce8e6e9551fbdd180114d5dd5b`
-
-The frontend supports displaying and copying the deployed contract address for verification and joining an existing deployment.
+Based on Midnight's example dApp architecture. Educational/demonstration project.

@@ -18,7 +18,7 @@ import { Box } from '@mui/material';
 import { Header } from './Header';
 
 /**
- * Provides layout for the bulletin board application.
+ * Provides layout for the Risk Passport application.
  */
 export const MainLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   return (
@@ -26,7 +26,7 @@ export const MainLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
       <Header />
       <Box sx={{ px: 10, position: 'relative', height: '100%' }}>
         <img
-          src="/logo-render.png"
+          src={`${import.meta.env.BASE_URL}logo-render.png`}
           alt="logo-image"
           height={607}
           style={{ position: 'absolute', zIndex: 1, left: '2vw', top: '5vh' }}

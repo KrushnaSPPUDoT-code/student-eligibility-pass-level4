@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import wasm from 'vite-plugin-wasm';
@@ -69,6 +71,42 @@ export default defineConfig({
           };
         }
         return null;
+      },
+    },
+    // Serve the ZK artifacts (keys/zkir) produced by the compact compiler
+    // directly to the browser during `vite dev`. The build copies them into
+    // `dist/` via the `build` script, but the dev server only exposes `public/`,
+    // so without this middleware requests for e.g. `/keys/issueCredential.verifier`
+    // fall through to the SPA fallback page and fail the ZK config read.
+    {
+      name: 'trustpass-zk-artifacts-dev',
+      configureServer(server) {
+        const zkArtifactsRoot = path.resolve(process.cwd(), '../contract/src/managed/bboard');
+        const base = server.config.base ?? '/';
+
+        const serve = (subdir: 'keys' | 'zkir') => (req, res, next) => {
+          const urlPath = (req.url ?? '').split('?')[0];
+          const prefix = `${base}${subdir}/`;
+          if (!urlPath.startsWith(prefix)) {
+            next();
+            return;
+          }
+          const filename = urlPath.slice(prefix.length);
+          if (!filename || filename.includes('/') || filename.includes('..')) {
+            next();
+            return;
+          }
+          const artifactPath = path.join(zkArtifactsRoot, subdir, filename);
+          if (!fs.existsSync(artifactPath)) {
+            next();
+            return;
+          }
+          res.setHeader('Content-Type', 'application/octet-stream');
+          fs.createReadStream(artifactPath).pipe(res);
+        };
+
+        server.middlewares.use(serve('keys'));
+        server.middlewares.use(serve('zkir'));
       },
     },
   ],
