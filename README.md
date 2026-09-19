@@ -307,5 +307,5 @@ https://x.com/Trust_Pass/status/2101302859853963558
 
 🎥 Demo
 
-A short demonstration video will show the live Preprod application, wallet connection, private eligibility inputs, credential issuance, active credential state, and successful transaction verification.
+**Demo Video:** [Watch the TrustPass Live MVP Demo](https://1drv.ms/v/c/363c5b63db246670/IQDxKHqJP-cPTYIGzrIH6IrdAXFZ5NEwB_WGPibb4hdK7sg?e=lZO1Ky)
 
