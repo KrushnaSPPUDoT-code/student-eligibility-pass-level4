@@ -14,6 +14,35 @@
 
 ---
 
+## 🌐 TrustPass Brand & Social Presence
+
+TrustPass maintains a consistent product identity across its public
+documentation and social presence.
+
+### Official X / Twitter
+
+**TrustPass:**  
+https://x.com/Trust_Pass
+
+The official account is used for product announcements, MVP demonstrations,
+privacy-focused updates, and technical development updates.
+
+### Product Updates
+
+- 🚀 **Launch announcement:** See the official TrustPass X profile for the product launch post.
+- 🔐 **Privacy & eligibility:** TrustPass privacy-preserving eligibility flow.
+- 🌙 **Built with Midnight:** TrustPass technology and Midnight integration.
+
+### Brand Assets
+
+| Asset | Purpose |
+|---|---|
+| [TrustPass Logo](assets/branding/trustpass-logo.png) | Official product identity |
+| [Privacy Flow](assets/branding/trustpass-privacy-flow.png) | Private data → TrustPass → verified eligibility |
+| [Midnight Integration](assets/branding/trustpass-midnight.png) | TrustPass and Midnight technology branding |
+
+---
+
 **Privacy-Preserving Financial Eligibility Passport on Midnight**
 
 [![CI](../../actions/workflows/ci.yaml/badge.svg)](../../actions/workflows/ci.yaml)
