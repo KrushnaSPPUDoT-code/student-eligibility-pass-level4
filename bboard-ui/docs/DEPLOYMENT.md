@@ -10,7 +10,7 @@ The production frontend is deployed through GitHub Actions to GitHub Pages.
 
 Live application:
 
-https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+https://krushnasppudot-code.github.io/trustpass-level5/
 
 ## Smart Contract
 
