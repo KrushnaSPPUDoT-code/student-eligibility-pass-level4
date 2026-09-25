@@ -2,7 +2,7 @@
 
 ## 🚀 Live MVP
 
-**Live Demo:** https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+**Live Demo:** https://krushnasppudot-code.github.io/trustpass-level5/
 
 **Network:** Midnight Preprod
 
@@ -47,7 +47,7 @@ privacy-focused updates, and technical development updates.
 
 [![CI](../../actions/workflows/ci.yaml/badge.svg)](../../actions/workflows/ci.yaml)
 
-TrustPass is a Level 4 Midnight Network MVP that lets a user prove they satisfy
+TrustPass is a Level 5 Midnight Network MVP that lets a user prove they satisfy
 predefined financial eligibility rules **without exposing their exact income,
 credit score, or total debt on-chain**.
 
@@ -170,8 +170,8 @@ private values to the circuits only during proof generation.
 ## Setup
 
 ```bash
-git clone https://github.com/KrushnaSPPUDoT-code/student-eligibility-pass-level4.git
-cd student-eligibility-pass-level4
+git clone https://github.com/KrushnaSPPUDoT-code/trustpass-level5.git
+cd trustpass-level5
 npm install --legacy-peer-deps
 ```
 
@@ -293,7 +293,7 @@ Based on Midnight's example dApp architecture. Educational/demonstration project
 ### Live MVP
 
 **GitHub Pages Demo:**  
-https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+https://krushnasppudot-code.github.io/trustpass-level5/
 
 **Network:** Midnight Preprod
 

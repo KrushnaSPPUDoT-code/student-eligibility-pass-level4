@@ -23,7 +23,7 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/student-eligibility-pass-level4/',
+  base: '/trustpass-level5/',
   cacheDir: './.vite',
   build: {
     target: 'esnext',

@@ -57,4 +57,4 @@ The API deployment flow is designed not to log private financial values or priva
 
 ## Scope
 
-TrustPass is an educational Level 4 MVP demonstrating privacy-preserving financial eligibility on the Midnight Preprod network. It should not be treated as a production financial, lending, or credit-assessment system.
+TrustPass is an educational Level 5 MVP demonstrating privacy-preserving financial eligibility on the Midnight Preprod network. It should not be treated as a production financial, lending, or credit-assessment system.

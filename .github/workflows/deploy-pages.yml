@@ -1,4 +1,4 @@
-name: Deploy Student Eligibility Pass
+name: Deploy TrustPass Level 5
 
 on:
   push:

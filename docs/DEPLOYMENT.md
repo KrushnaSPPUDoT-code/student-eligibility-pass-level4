@@ -8,7 +8,7 @@ The TrustPass MVP is deployed and tested on the Midnight Preprod network.
 
 GitHub Pages:
 
-https://krushnasppudot-code.github.io/student-eligibility-pass-level4/
+https://krushnasppudot-code.github.io/trustpass-level5/
 
 ## Contract
 
